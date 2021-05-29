@@ -4,9 +4,11 @@ import numpy as np
 
 class AgentManager:
 
-    def __init__(self, agent_num, level_len):
+    def __init__(self, agent_num, level_len, game):
+        self.game = game
         self.agent_num = agent_num
         self.level_len = level_len
+        self.current_generation = 0
         self.agents = []
 
         for i in range(agent_num):
@@ -45,16 +47,42 @@ class AgentManager:
     def recombination(self, agent1, agent2):
         index = random.randint(0, len(agent1))
         return self.fix_agent(agent1[:index] + agent2[index:])
-    
+        
     def go_next_generation(self):
+        
+        chance, _ = self.prob()
+        next_g = np.random.choice(self.agents, len(self.agents) // 2, p=chance)
+        parents = np.random.choice(self.agents, (len(self.agents) - (len(self.agents) // 2)) * 2, p=chance)
+        for i in range(len(parents), 2):
+            next_g.append(self.recombination(parents[i], parents[i + 1]))
+        for i in reange(next_g):
+            next_g[i] = self.mutation(next_g[i])
+        self.agents = next_g
+        self.current_generation += 1
+    
+    def prob(self):
         chance = [0] * len(self.agents)
         Sum = 0
+        p = 100000
         for i in range(len(self.agents)):
-            j = i
+            j = game.get_score(self.agents[i])
+            if(j < p):
+                p = j
             chance[i] = j
             Sum += j
-        chance[:] = [x / Sum for x in chance]
-        next_g = np.random.choice(self.agents, len(self.agents) // 2, chance)
+        if(p < 0):
+            chance[:] = [(x - p) / Sum for x in chance]
+        else:
+            chance[:] = [x / Sum for x in chance]
+        return (chance, Sum)
+
+    def converge(self, limit, iteration_limit):
+        s = 1000
+        while(s > limit and self.current_generation < iteration_limit):
+            _, s1 = self.prob()
+            self.go_next_generation()
+            _, s2 = self.prob()
+            s = abs(s2 - s1)
 
 a = AgentManager(2, 10)
 print(a.agents)
