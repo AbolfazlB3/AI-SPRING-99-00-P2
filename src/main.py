@@ -24,9 +24,17 @@ game = Game(levels)
 
 while game.load_next_level():
 
-    AM = AgentManager(10, game.current_level_len)
+    AM = AgentManager(900, game)
+    level = game.get_current_level()
+    agent = AM.converge(0.0002, 900)
+    score = game.get_score(agent)
 
-    print(game.get_current_level())
+    print(level[1])
+    print(agent)
+    print(score)
+    print("")
 
+    """
     for agent in AM.agents:
         print(game.get_score(agent), agent)
+    """

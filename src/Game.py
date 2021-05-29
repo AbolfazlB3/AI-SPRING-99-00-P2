@@ -20,13 +20,13 @@ class Game:
         except:
             return None
 
-    WIN_REWARD = 4.0
+    WIN_REWARD = 6.0
     FLAG_REWARD = 1.0
     MUSHROOM_REWARD = 2.0
     KILL_REWARD = 2.0
-    JUMP_REWARD = -0.4
-    MAX_STEP_REWARD = 0.2
-    DEATH_REWARD = -2.5
+    JUMP_REWARD = -0.15
+    MAX_STEP_REWARD = 0.3
+    DEATH_REWARD = -4.5
 
     def get_score(self, actions):
         cll = self.current_level_len
@@ -39,6 +39,7 @@ class Game:
         reward = res[3]
         reward += res[1] * self.MAX_STEP_REWARD
         reward += res[2] * self.DEATH_REWARD
+        reward += self.WIN_REWARD if res[2] == 0 else 0
 
         return (res[2] == 0, reward)
 
@@ -51,12 +52,13 @@ class Game:
 
         cll = self.current_level_len
         act = actions[ind]
-        cell = level[ind+1]
 
         if(ind == cll-1):
             self.rewards[ind] = (
                 1, 1, 0, self.FLAG_REWARD if act == "1" else 0)
             return self.rewards[ind]
+
+        cell = level[ind+1]
 
         reward = 0.0
         lose = False
