@@ -13,6 +13,9 @@ class AgentManager:
         self.level_len = game.current_level_len
         self.current_generation = 0
         self.agents = []
+        self.maxs = []
+        self.mins = []
+        self.avs = []
 
         for i in range(agent_num):
             self.agents.append(self.create_new_agent(self.level_len))
@@ -48,7 +51,7 @@ class AgentManager:
         return ''.join(list_agent)
 
     MUTATION_CHANCE = 0.2
-    BIASED_MUTATION_CHANCE = 0.4
+    BIASED_MUTATION_CHANCE = 0.75
 
     def mutate(self, agent):
         if(random.random() > self.MUTATION_CHANCE):
@@ -109,32 +112,63 @@ class AgentManager:
         xb = x/b
         return x+b if x > 0 else b*(abs(xb)+1)*math.exp(xb)
 
+    def rescale3(self, x):
+        b = 1.5 * self.game.current_level_len
+        return math.exp(x/b)
+
     def prob(self):
         chance = [0] * len(self.agents)
         Sum = 0
         scoreSum = 0
+        mns = 1000000
+        mxs = -1000000
         for i in range(len(self.agents)):
             j = self.game.get_score(self.agents[i])[1]
             scoreSum += j
-            j = self.rescale2(j)
+            mxs = max(mxs, j)
+            mns = min(mns, j)
+            j = self.rescale3(j)
             chance[i] = j
             Sum += j
         chance = [x / Sum for x in chance]
-        return (chance, scoreSum/len(self.agents))
+        return (chance, scoreSum/len(self.agents), mns, mxs)
 
-    MIN_CONVERGE_NUM = 12
+    MIN_CONVERGE_NUM = 20
 
     def converge(self, limit, iteration_limit):
         s = 1000
         slast = -10**6
         dss = [limit + 1]
+        firstSuccess = False
+        inds = []
+
+        best_agent = None
+        best_result = (False, -1000000)
+
         while(self.current_generation < iteration_limit):
-            probs, s = self.prob()
+            probs, s, mns, mxs = self.prob()
+            gen_best_agent = self.agents[probs.index(max(probs))]
+            gen_best_agent_score = self.game.get_score(gen_best_agent)
+
+            if((not firstSuccess) and gen_best_agent_score[0]):
+                firstSuccess = True
+                print("first success", self.current_generation,
+                      gen_best_agent_score)
+
+            if(gen_best_agent_score[1] > best_result[1]):
+                best_result = gen_best_agent_score
+                best_agent = gen_best_agent
+
+            inds.append(self.current_generation)
+            self.mins.append(mns)
+            self.maxs.append(mxs)
+            self.avs.append(s)
+
             ds = abs(s - slast)
 
             finish = True
-            for i in dss[-self.MIN_CONVERGE_NUM:]:
-                if(ds > limit):
+            for dsi in dss[-self.MIN_CONVERGE_NUM:]:
+                if(dsi > limit):
                     finish = False
 
             if finish:
@@ -145,6 +179,5 @@ class AgentManager:
             self.go_next_generation(probs)
 
         print("regen num", self.current_generation)
-        c, _ = self.prob()
-        res = self.agents[c.index(max(c))]
-        return res
+
+        return best_agent, inds, self.mins, self.maxs, self.avs

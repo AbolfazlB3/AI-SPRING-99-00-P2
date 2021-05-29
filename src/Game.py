@@ -20,13 +20,26 @@ class Game:
         except:
             return None
 
-    WIN_REWARD = 6.0
+    WIN_REWARD = 4.0
     FLAG_REWARD = 1.0
     MUSHROOM_REWARD = 2.0
     KILL_REWARD = 2.0
-    JUMP_REWARD = -0.15
+    JUMP_REWARD = -0.3
     MAX_STEP_REWARD = 0.3
-    DEATH_REWARD = -4.5
+    DEATH_REWARD = -3
+
+    def get_max_score(self):
+        s = input()
+        d = input()
+        x = 7
+        x += s.count("G") * 2
+        x += s.count("M") * 2
+        x -= s.count("MG") * 2
+        x -= (d.count("1") - 1) * self.JUMP_REWARD
+        x += len(s) * 0.3
+        if(s[1] == "G"):
+            x -= 2
+        print(x)
 
     def get_score(self, actions):
         cll = self.current_level_len

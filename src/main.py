@@ -1,5 +1,6 @@
 from os import walk
 import os
+import matplotlib.pyplot as plt
 
 from Game import Game
 from AgentManager import AgentManager
@@ -24,15 +25,20 @@ game = Game(levels)
 
 while game.load_next_level():
 
-    AM = AgentManager(900, game)
+    AM = AgentManager(600, game)
     level = game.get_current_level()
-    agent = AM.converge(0.0002, 900)
+    agent, inds, mins, maxs, avs = AM.converge(0.5, 1500)
     score = game.get_score(agent)
 
     print(level[1])
     print(agent)
     print(score)
     print("")
+
+    plt.plot(inds, mins, 'r')
+    plt.plot(inds, maxs, 'b')
+    plt.plot(inds, avs, 'g')
+    plt.show()
 
     """
     for agent in AM.agents:
