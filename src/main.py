@@ -1,16 +1,12 @@
-from AgentManager import AgentManager
 from os import walk
 import os
 
+from Game import Game
+from AgentManager import AgentManager
 
-AM = AgentManager(10, 12)
-
-print(AM.agents)
 
 PATH = "../levels/"
-
 _, _, filenames = next(walk(PATH))
-
 
 levels = [
     (
@@ -22,3 +18,15 @@ levels = [
 
 print(filenames)
 print(levels)
+
+
+game = Game(levels)
+
+while game.load_next_level():
+
+    AM = AgentManager(10, game.current_level_len)
+
+    print(game.get_current_level())
+
+    for agent in AM.agents:
+        print(game.get_score(agent), agent)
