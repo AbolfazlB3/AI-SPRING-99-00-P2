@@ -40,7 +40,7 @@ class Game:
         reward += res[1] * self.MAX_STEP_REWARD
         reward += res[2] * self.DEATH_REWARD
 
-        return (res[2] == 0, )
+        return (res[2] == 0, reward)
 
     # (number of steps without dieing, max number of steps without dieing,
     #  number of deaths, total reward)

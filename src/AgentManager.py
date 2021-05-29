@@ -36,36 +36,57 @@ class AgentManager:
                 res += "2"
         res = self.fix_agent(res)
         return res
-    
+
     def fix_agent(self, agent):
         list_agent = list(agent)
-        for i in range(1, len(list_agent)):
-            if(list_agent[i - 1] == "1"):
-                list_agent[i - j] = "0"
+        for i in range(len(list_agent) - 1):
+            if(list_agent[i] == "1" and list_agent[i+1] != "0"):
+                list_agent[i + random.randint(0, 1)] = "0"
         return ''.join(list_agent)
-    
+
+    def mutate(self, agent):
+        if(random.random() > self.MUTATION_CHANCE):
+            return agent
+
+        indices = np.random.choice(
+            len(agent), int(np.log2(len(agent))), replace=False)
+
+        list_agent = list(agent)
+
+        for i in indices:
+            if(list_agent[i] == "1"):
+                if(random.random() > self.BIASED_MUTATION_CHANCE):
+                    list_agent[i] = "0"
+                else:
+                    list_agent[i] = str(random.randint(1, 2))
+            else:
+                list_agent[i] = str(random.randint(0, 2))
+
+        return ''.join(list_agent)
+
     def recombination(self, agent1, agent2):
         index = random.randint(0, len(agent1))
         return self.fix_agent(agent1[:index] + agent2[index:])
-        
+
     def go_next_generation(self):
-        
+
         chance, _ = self.prob()
         next_g = np.random.choice(self.agents, len(self.agents) // 2, p=chance)
-        parents = np.random.choice(self.agents, (len(self.agents) - (len(self.agents) // 2)) * 2, p=chance)
+        parents = np.random.choice(
+            self.agents, (len(self.agents) - (len(self.agents) // 2)) * 2, p=chance)
         for i in range(len(parents), 2):
             next_g.append(self.recombination(parents[i], parents[i + 1]))
-        for i in reange(next_g):
+        for i in range(next_g):
             next_g[i] = self.mutation(next_g[i])
         self.agents = next_g
         self.current_generation += 1
-    
+
     def prob(self):
         chance = [0] * len(self.agents)
         Sum = 0
         p = 100000
         for i in range(len(self.agents)):
-            j = game.get_score(self.agents[i])
+            j = self.game.get_score(self.agents[i])
             if(j < p):
                 p = j
             chance[i] = j
@@ -83,6 +104,7 @@ class AgentManager:
             self.go_next_generation()
             _, s2 = self.prob()
             s = abs(s2 - s1)
+
 
 a = AgentManager(2, 10)
 print(a.agents)
