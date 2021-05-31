@@ -2,6 +2,7 @@ from os import walk
 import os
 import matplotlib.pyplot as plt
 
+from gui import GUI
 from Game import Game
 from AgentManager import AgentManager
 
@@ -35,6 +36,8 @@ while game.load_next_level():
     print(score)
     print("")
 
+    GUI(agent, level[1])
+    
     plt.plot(inds, mins, 'r')
     plt.plot(inds, maxs, 'b')
     plt.plot(inds, avs, 'g')
