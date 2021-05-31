@@ -28,19 +28,6 @@ class Game:
     MAX_STEP_REWARD = 0.3
     DEATH_REWARD = -3
 
-    def get_max_score(self):
-        s = input()
-        d = input()
-        x = 7
-        x += s.count("G") * 2
-        x += s.count("M") * 2
-        x -= s.count("MG") * 2
-        x -= (d.count("1") - 1) * self.JUMP_REWARD
-        x += len(s) * 0.3
-        if(s[1] == "G"):
-            x -= 2
-        print(x)
-
     def get_score(self, actions):
         cll = self.current_level_len
         self.rewards = [None for i in range(cll)]
@@ -101,3 +88,18 @@ class Game:
         )
 
         return self.rewards[ind]
+
+    def get_max_score(self, level):
+        x = level.count("GL") * self.DEATH_REWARD
+        if(x == 0):
+            x = self.WIN_REWARD
+        x += level.count("G") * self.KILL_REWARD
+        x += level.count("M") * self.MUSHROOM_REWARD
+        x -= level.count("MG") * self.MUSHROOM_REWARD
+        x += (level.count("G") - level.count("MG")) * self.JUMP_REWARD
+        x += len(level) * self.MAX_STEP_REWARD
+        if(level[1] == "G"):
+            x -= self.KILL_REWARD
+        if(level[-1] == "_"):
+            x += self.FLAG_REWARD
+        return x
