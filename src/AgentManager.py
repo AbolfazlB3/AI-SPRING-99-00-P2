@@ -82,11 +82,19 @@ class AgentManager:
     def recombination(self, agent1, agent2):
         index = random.randint(0, len(agent1))
         return (agent1[:index] + agent2[index:], agent2[:index] + agent1[index:])
+    
+    def recombination2(self, agent1, agent2):
+        index1 = random.randint(0, len(agent1))
+        index2 = random.randint(0, len(agent1))
+        while(index2 == index1):
+            index2 = random.randint(0, len(agent1))
+        if(index1 > index2):
+            index1, index2 = index2, index1
+        return (agent1[:index1] + agent2[index1:index2] + agent1[index2:], agent2[:index1] + agent1[index1:index2] + agent2[index2:])
 
     def go_next_generation(self, chance):
 
         n = len(self.agents)
-
         next_g_inds = np.random.choice(
             len(self.agents), n // 2, p=chance)
         next_g = [self.agents[x] for x in next_g_inds]
@@ -99,7 +107,34 @@ class AgentManager:
         m = len(parents)
 
         for i in range(m):
-            recomb = self.recombination(parents[i][0], parents[(i + 1) % m][0])
+            recomb = self.recombination2(parents[i][0], parents[(i + 1) % m][0])
+            childs.append(recomb[0])
+            childs.append(recomb[1])
+
+        for i in range(len(childs)):
+            agent = self.fix_agent(self.mutate(childs[i]))
+            childs[i] = (agent, self.get_score(agent))
+
+        for i in range(m):
+            agent = self.fix_agent(self.mutate(next_g[i][0]))
+            next_g[i] = (agent, self.get_score(agent))
+
+        childs = sorted(childs, key=lambda x: x[1][1])[-m:]
+
+        self.agents = childs + next_g
+        self.current_generation += 1
+    
+    def go_next_generation2(self):
+
+        n = len(self.agents)
+        parents = sorted(self.agents, key=lambda x: x[1][1])[n//2:]
+
+        childs = []
+
+        m = len(parents)
+
+        for i in range(m):
+            recomb = self.recombination2(parents[i][0], parents[(i + 1) % m][0])
             childs.append(recomb[0])
             childs.append(recomb[1])
 
@@ -115,6 +150,7 @@ class AgentManager:
 
         self.agents = childs + parents
         self.current_generation += 1
+
 
     RESCALE_CONSTANT = 0.7
 
