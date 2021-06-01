@@ -18,37 +18,40 @@ levels = [
     )[0:2] for level in [open(PATH+name) for name in filenames]
 ]
 
+"""
 print(filenames)
 print(levels)
-
+"""
 
 game = Game(levels)
 
 while game.load_next_level():
 
-    AM = AgentManager(800, game)
+    AM = AgentManager(200, game)
     level = game.get_current_level()
-    agent, inds, mins, maxs, avs = AM.converge(0.2, 300)
-    score = game.get_score(agent)
 
-    score = (score[0], round(score[1], 4))
+    print(level[0])
+
+    agent, inds, mins, maxs, avs, mxhs = AM.converge(0.2, 600)
+
+    score = agent[1]
 
     print(level[1])
-    print(agent)
+    print(agent[0])
     print("Max possible score:\t", game.get_max_score(level[1]))
     print("Actual score:\t\t", score[1])
     print("Win: ", score[0])
     print(score)
     print("")
 
-    GUI(agent, level[1], score, level[0])
+    GUI(agent[0], level[1], score, level[0])
 
-    plt.plot(inds, mins, 'r')
+    fig = plt.gcf()
+    fig.canvas.manager.set_window_title(level[0])
     plt.plot(inds, maxs, 'b')
+    plt.plot(inds, mxhs, 'orange')
     plt.plot(inds, avs, 'g')
+    plt.plot(inds, mins, 'r')
+    plt.legend(["Best", "Avg of best 1/3", "Average",
+                "Worst"], loc="lower right")
     plt.show()
-
-    """
-    for agent in AM.agents:
-        print(game.get_score(agent), agent)
-    """

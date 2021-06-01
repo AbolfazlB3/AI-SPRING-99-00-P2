@@ -41,7 +41,7 @@ class Game:
         reward += res[2] * self.DEATH_REWARD
         reward += self.WIN_REWARD if res[2] == 0 else 0
 
-        return (res[2] == 0, reward)
+        return (res[2] == 0, round(reward, 4))
 
     # (number of steps without dieing, max number of steps without dieing,
     #  number of deaths, total reward)
@@ -91,15 +91,19 @@ class Game:
 
     def get_max_score(self, level):
         x = level.count("GL") * self.DEATH_REWARD
+        if(x != 0):
+            x = self.DEATH_REWARD
+            l = max(level.index("GL") - 2, len(level) - level.index("GL"))
         if(x == 0):
             x = self.WIN_REWARD
+            l = len(level)
         x += level.count("G") * self.KILL_REWARD
         x += level.count("M") * self.MUSHROOM_REWARD
         x -= level.count("MG") * self.MUSHROOM_REWARD
-        x += (level.count("G") - level.count("MG")) * self.JUMP_REWARD
-        x += len(level) * self.MAX_STEP_REWARD
+        x += level.count("G") * self.JUMP_REWARD
+        x += l * self.MAX_STEP_REWARD
         if(level[1] == "G"):
             x -= self.KILL_REWARD
         if(level[-1] == "_"):
             x += self.FLAG_REWARD
-        return x
+        return round(x, 4)

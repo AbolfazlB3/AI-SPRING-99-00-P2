@@ -1,3 +1,4 @@
+from os import remove
 import random
 import numpy as np
 from Game import Game
@@ -16,9 +17,14 @@ class AgentManager:
         self.maxs = []
         self.mins = []
         self.avs = []
+        self.mxhs = []
 
         for i in range(agent_num):
-            self.agents.append(self.create_new_agent(self.level_len))
+            agent = self.create_new_agent(self.level_len)
+            self.agents.append((agent, self.get_score(agent)))
+
+    def get_score(self, agent):
+        return self.game.get_score(agent)
 
     init_prob = {
         "move": 0.38,
@@ -79,22 +85,35 @@ class AgentManager:
 
     def go_next_generation(self, chance):
 
+        n = len(self.agents)
+
         next_g_inds = np.random.choice(
-            len(self.agents), len(self.agents) // 2, p=chance)
+            len(self.agents), n // 2, p=chance)
         next_g = [self.agents[x] for x in next_g_inds]
         parent_inds = np.random.choice(
-            len(self.agents), len(self.agents) // 2, p=chance)
+            len(self.agents), n // 2, p=chance)
         parents = [self.agents[x] for x in parent_inds]
 
-        for i in range(0, len(parents), 2):
-            recomb = self.recombination(parents[i], parents[i + 1])
-            next_g.append(recomb[0])
-            next_g.append(recomb[1])
+        childs = []
 
-        for i in range(len(next_g)):
-            next_g[i] = self.fix_agent(self.mutate(next_g[i]))
+        m = len(parents)
 
-        self.agents = next_g
+        for i in range(m):
+            recomb = self.recombination(parents[i][0], parents[(i + 1) % m][0])
+            childs.append(recomb[0])
+            childs.append(recomb[1])
+
+        for i in range(len(childs)):
+            agent = self.fix_agent(self.mutate(childs[i]))
+            childs[i] = (agent, self.get_score(agent))
+
+        for i in range(m):
+            agent = self.fix_agent(self.mutate(parents[i][0]))
+            parents[i] = (agent, self.get_score(agent))
+
+        childs = sorted(childs, key=lambda x: x[1][1])[-m:]
+
+        self.agents = childs + parents
         self.current_generation += 1
 
     RESCALE_CONSTANT = 0.7
@@ -117,42 +136,54 @@ class AgentManager:
         return math.exp(x/b)
 
     def prob(self):
-        chance = [0] * len(self.agents)
+        n = len(self.agents)
+        chance = [0] * n
         Sum = 0
         scoreSum = 0
         mns = 1000000
         mxs = -1000000
-        for i in range(len(self.agents)):
-            j = self.game.get_score(self.agents[i])[1]
-            scoreSum += j
-            mxs = max(mxs, j)
-            mns = min(mns, j)
-            j = self.rescale3(j)
-            chance[i] = j
-            Sum += j
+        scores = []
+        for i in range(n):
+            score = self.agents[i][1][1]
+            scores.append(score)
+            scoreSum += score
+            mxs = max(mxs, score)
+            mns = min(mns, score)
+            score = self.rescale3(score)
+            chance[i] = score
+            Sum += score
         chance = [x / Sum for x in chance]
-        return (chance, scoreSum/len(self.agents), mns, mxs)
+        scores = sorted(scores)
+        maxhalf = self.get_avg(scores, n//3)
+        return (chance, scoreSum/len(self.agents), mns, mxs, maxhalf)
 
-    MIN_CONVERGE_NUM = 20
+    def get_avg(self, lst, m=-1):
+        if(m < 0):
+            m = len(lst)
+        m = min(m, len(lst))
+        return sum(lst[-m:]) / m
+
+    MIN_CONVERGE_NUM = 40
 
     def converge(self, limit, iteration_limit):
-        s = 1000
-        slast = -10**6
-        dss = [limit + 1]
+        dss = []
         firstSuccess = False
         inds = []
+
+        limit = limit * math.sqrt(self.level_len) / 3
+        print("limit: ", limit)
 
         best_agent = None
         best_result = (False, -1000000)
 
         while(self.current_generation < iteration_limit):
-            probs, s, mns, mxs = self.prob()
+            probs, s, mns, mxs, mxh = self.prob()
             gen_best_agent = self.agents[probs.index(max(probs))]
-            gen_best_agent_score = self.game.get_score(gen_best_agent)
+            gen_best_agent_score = gen_best_agent[1]
 
             if((not firstSuccess) and gen_best_agent_score[0]):
                 firstSuccess = True
-                print("first success", self.current_generation,
+                print("First success in gen num", self.current_generation,
                       gen_best_agent_score)
 
             if(gen_best_agent_score[1] > best_result[1]):
@@ -162,22 +193,27 @@ class AgentManager:
             inds.append(self.current_generation)
             self.mins.append(mns)
             self.maxs.append(mxs)
+            self.mxhs.append(mxh)
             self.avs.append(s)
 
-            ds = abs(s - slast)
+            ds = abs(mxh)
 
-            finish = True
-            for dsi in dss[-self.MIN_CONVERGE_NUM:]:
-                if(dsi > limit):
+            dss.append(mxh)
+
+            if(len(dss) >= self.MIN_CONVERGE_NUM):
+                finish = True
+                lst = dss[-self.MIN_CONVERGE_NUM:]
+                avg = sum(lst) / len(lst)
+                for dsi in lst:
+                    if(abs(dsi - avg) > limit):
+                        finish = False
+                if(abs(mxs - avg) > limit):
                     finish = False
+                if finish:
+                    break
 
-            if finish:
-                break
-
-            dss.append(ds)
-            slast = s
             self.go_next_generation(probs)
 
-        print("regen num", self.current_generation)
+        print("Finished in gen num", self.current_generation)
 
-        return best_agent, inds, self.mins, self.maxs, self.avs
+        return best_agent, inds, self.mins, self.maxs, self.avs, self.mxhs
