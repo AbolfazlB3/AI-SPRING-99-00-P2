@@ -82,7 +82,7 @@ class AgentManager:
     def recombination(self, agent1, agent2):
         index = random.randint(0, len(agent1))
         return (agent1[:index] + agent2[index:], agent2[:index] + agent1[index:])
-    
+
     def recombination2(self, agent1, agent2):
         index1 = random.randint(0, len(agent1))
         index2 = random.randint(0, len(agent1))
@@ -107,7 +107,7 @@ class AgentManager:
         m = len(parents)
 
         for i in range(m):
-            recomb = self.recombination2(parents[i][0], parents[(i + 1) % m][0])
+            recomb = self.recombination(parents[i][0], parents[(i + 1) % m][0])
             childs.append(recomb[0])
             childs.append(recomb[1])
 
@@ -123,7 +123,7 @@ class AgentManager:
 
         self.agents = childs + next_g
         self.current_generation += 1
-    
+
     def go_next_generation2(self):
 
         n = len(self.agents)
@@ -134,7 +134,7 @@ class AgentManager:
         m = len(parents)
 
         for i in range(m):
-            recomb = self.recombination2(parents[i][0], parents[(i + 1) % m][0])
+            recomb = self.recombination(parents[i][0], parents[(i + 1) % m][0])
             childs.append(recomb[0])
             childs.append(recomb[1])
 
@@ -150,7 +150,6 @@ class AgentManager:
 
         self.agents = childs + parents
         self.current_generation += 1
-
 
     RESCALE_CONSTANT = 0.7
 
